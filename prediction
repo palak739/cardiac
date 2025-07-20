@@ -1,0 +1,37 @@
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing import image
+import os
+
+# --- Load the trained model ---
+model = tf.keras.models.load_model('ecg_cnn_model.h5')
+
+# --- Define class mapping (must match training order) ---
+class_names = ['Abnormal Heartbeat', 'History of MI', 'Myocardial Infarction', 'Normal']  # Adjust if your class order differs
+
+# --- Detection function ---
+def detect_ecg(image_path):
+    # Load and preprocess the image
+    img = image.load_img(image_path, target_size=(224, 224), color_mode='grayscale')
+    img_array = image.img_to_array(img) / 255.0  # Normalize
+    img_array = np.expand_dims(img_array, axis=0)  # Batch dimension
+
+    # Make prediction
+    predictions = model.predict(img_array)
+    predicted_index = np.argmax(predictions[0])
+    predicted_label = class_names[predicted_index]
+    confidence = predictions[0][predicted_index] * 100
+
+    # --- Display image and prediction ---
+    plt.imshow(img_array[0].squeeze(), cmap='gray')
+    plt.title(f"Prediction: {predicted_label} ({confidence:.2f}%)", fontsize=14)
+    plt.axis('off')
+    plt.show()
+
+    return predicted_label, confidence
+
+# --- Example usage ---
+image_path = input("Enter the path to ECG image: ")
+label, conf = detect_ecg(image_path)
+print(f"✅ Predicted: {label} ({conf:.2f}%)")
